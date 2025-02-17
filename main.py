@@ -65,13 +65,7 @@ examples = [
 with gr.Blocks(css=css, theme='ParityError/Interstellar') as app:
     with gr.Column(elem_id="col-container"):
         gr.Markdown(f"""
-    # Stable Diffusion <a href="https://www.patreon.com/marat_ai">by marat_ai</a> 
-    <a href="https://www.youtube.com/@marat_ai">
-        <img src="https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="YouTube" style="display: inline;"/>
-    </a>
-    <a href="https://www.patreon.com/marat_ai">
-        <img src="https://img.shields.io/badge/Patreon-F96854?style=for-the-badge&logo=patreon&logoColor=white" alt="Patreon" style="display: inline;"/>
-    </a>
+    # Stable Diffusion <a href="">AN324</a>
 
     Google Colab's free tier offers about 4 hours of GPU usage per day. No authorization, no data storing or tracking. Your session data will be deleted when this session closes.
 """)
