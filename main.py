@@ -4,20 +4,28 @@ import uuid
 import torch
 import numpy as np
 import gradio as gr
+import sys
 from diffusers import StableDiffusionXLPipeline, EulerDiscreteScheduler
 
+MODEL = "https://civitai.com/api/download/models/128078?type=Model&format=SafeTensor&size=pruned&fp=fp16"
+#https://civitai.com/api/download/models/128078?type=Model&format=SafeTensor&size=pruned&fp=fp16
+#anime https://civitai.com/api/download/models/1352077?type=Model&format=SafeTensor&size=pruned&fp=fp16
 # Constants
 MAX_SEED = np.iinfo(np.int32).max
 MAX_IMAGE_SIZE = 1344
 SAVE_DIR = "/content/images"
 MODEL_PATH = '/content/StableUI_base/model_link.safetensors'
 
+#GET
+if len(sys.argv) > 1:
+    MODEL = sys.argv[1]
+
 # Setup
 os.makedirs(SAVE_DIR, exist_ok=True)
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 # Load model
-os.system(f'wget -O {MODEL_PATH} "https://civitai.com/api/download/models/1352077?type=Model&format=SafeTensor&size=pruned&fp=fp16"')
+os.system(f'wget -O {MODEL_PATH} {MODEL}')
 
 pipe = StableDiffusionXLPipeline.from_single_file(MODEL_PATH, use_safetensors=True, torch_dtype=torch.float16).to(device)
 pipe.scheduler = EulerDiscreteScheduler.from_config(pipe.scheduler.config)
