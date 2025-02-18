@@ -16,8 +16,6 @@ MAX_IMAGE_SIZE = 1344
 SAVE_DIR = "/content/images"
 MODEL_PATH = '/content/StableUI_base/model_link.safetensors'
 #GET
-if len(sys.argv) > 1:
-    MODEL = sys.argv[1]
 
 # Setup
 os.makedirs(SAVE_DIR, exist_ok=True)
