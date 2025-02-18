@@ -21,8 +21,6 @@ MODEL_PATH = '/content/StableUI_base/model_link.safetensors'
 os.makedirs(SAVE_DIR, exist_ok=True)
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-# Load model
-os.system(f'wget -O {MODEL_PATH} {MODEL}')
 
 pipe = StableDiffusionXLPipeline.from_single_file(MODEL_PATH, use_safetensors=True, torch_dtype=torch.float16).to(device)
 pipe.scheduler = EulerDiscreteScheduler.from_config(pipe.scheduler.config)
