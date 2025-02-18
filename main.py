@@ -5,7 +5,7 @@ import torch
 import numpy as np
 import gradio as gr
 import sys
-from diffusers import StableDiffusionXLPipeline, EulerDiscreteScheduler
+from diffusers import StableDiffusionXLPipeline, EulerDiscreteScheduler, StableDiffusionXLImg2ImgPipeline, LoRANetwork
 
 MODEL = "https://civitai.com/api/download/models/128078?type=Model&format=SafeTensor&size=pruned&fp=fp16"
 #https://civitai.com/api/download/models/128078?type=Model&format=SafeTensor&size=pruned&fp=fp16
@@ -15,10 +15,12 @@ MAX_SEED = np.iinfo(np.int32).max
 MAX_IMAGE_SIZE = 1344
 SAVE_DIR = "/content/images"
 MODEL_PATH = '/content/StableUI_base/model_link.safetensors'
-
+LORA_PATH = "content/StableUI_base/lora.safetensors"
+LORA=""
 #GET
-if len(sys.argv) > 1:
+if len(sys.argv) > 2:
     MODEL = sys.argv[1]
+    LORA = sys.argv[2]
 
 # Setup
 os.makedirs(SAVE_DIR, exist_ok=True)
@@ -31,6 +33,10 @@ pipe = StableDiffusionXLPipeline.from_single_file(MODEL_PATH, use_safetensors=Tr
 pipe.scheduler = EulerDiscreteScheduler.from_config(pipe.scheduler.config)
 print("\033[1;32mDone!\033[0m")
 
+if len(LORA) > 5:
+    os.system(f'wget -O {LORA_PATH} {LORA}')
+    pipe.load_lora_weights(LORA_PATH)
+    pipe.set_lora_scale(1)
 
 def infer(prompt, negative_prompt, seed, width, height, guidance_scale, num_inference_steps):
     if seed == -1:  # -1 indicates random seed
