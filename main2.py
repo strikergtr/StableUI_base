@@ -6,8 +6,6 @@ import numpy as np
 import gradio as gr
 import sys
 from diffusers import StableDiffusionXLPipeline, EulerDiscreteScheduler
-
-MODEL = "https://civitai.com/api/download/models/128078?type=Model&format=SafeTensor&size=pruned&fp=fp16"
 #https://civitai.com/api/download/models/128078?type=Model&format=SafeTensor&size=pruned&fp=fp16
 #anime https://civitai.com/api/download/models/1352077?type=Model&format=SafeTensor&size=pruned&fp=fp16
 # Constants
