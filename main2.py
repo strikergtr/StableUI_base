@@ -25,7 +25,7 @@ pipe = StableDiffusionXLPipeline.from_single_file(MODEL_PATH, use_safetensors=Tr
 pipe.scheduler = EulerDiscreteScheduler.from_config(pipe.scheduler.config)
 
 pipe.load_lora_weights(LORA_PATH)
-pipe.set_lora_scale(0.8)  # Adjust between 0.0 and 1.0
+#pipe.set_lora_scale(0.8)  # Adjust between 0.0 and 1.0
 print("\033[1;32mDone!\033[0m")
 
 def infer(prompt, negative_prompt, seed, width, height, guidance_scale, num_inference_steps):
