@@ -13,6 +13,7 @@ MAX_SEED = np.iinfo(np.int32).max
 MAX_IMAGE_SIZE = 1344
 SAVE_DIR = "/content/images"
 MODEL_PATH = '/content/drive/MyDrive/model/model_link.safetensors'
+LORA_PATH = '/content/drive/MyDrive/model/lora.safetensors'
 #GET
 
 # Setup
@@ -22,6 +23,9 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 
 pipe = StableDiffusionXLPipeline.from_single_file(MODEL_PATH, use_safetensors=True, torch_dtype=torch.float16).to(device)
 pipe.scheduler = EulerDiscreteScheduler.from_config(pipe.scheduler.config)
+
+pipe.load_lora_weights(lora_path)
+pipe.set_lora_scale(0.8)  # Adjust between 0.0 and 1.0
 print("\033[1;32mDone!\033[0m")
 
 def infer(prompt, negative_prompt, seed, width, height, guidance_scale, num_inference_steps):
