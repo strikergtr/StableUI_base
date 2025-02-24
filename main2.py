@@ -14,7 +14,7 @@ MODEL = "https://civitai.com/api/download/models/128078?type=Model&format=SafeTe
 MAX_SEED = np.iinfo(np.int32).max
 MAX_IMAGE_SIZE = 1344
 SAVE_DIR = "/content/images"
-MODEL_PATH = '/content/StableUI_base/model_link.safetensors'
+MODEL_PATH = '/content/drive/MyDrive/model/model_link.safetensors'
 #GET
 
 # Setup
