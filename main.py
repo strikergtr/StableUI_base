@@ -15,27 +15,26 @@ MAX_SEED = np.iinfo(np.int32).max
 MAX_IMAGE_SIZE = 1344
 
 # Default SDXL Checkpoint URL
-# หมายเหตุ: หากโมเดลต้องการ API Key ให้ต่อท้ายด้วย &token=YOUR_CIVITAI_API_KEY
 MODEL = "https://civitai.com/api/download/models/128078?type=Model&format=SafeTensor&size=pruned&fp=fp16"
 
 if len(sys.argv) > 1:
     MODEL = sys.argv[1]
 
-# Create required directories
+# 1. สร้างโฟลเดอร์ที่จำเป็นทั้งหมดล่วงหน้า
 os.makedirs(SAVE_DIR, exist_ok=True)
 os.makedirs(MODEL_DIR, exist_ok=True)
 
-# Device & Precision setup
-device = "cuda" if torch.cuda.is_available() else "cpu"
-dtype = torch.float16 if torch.cuda.is_available() else torch.float32
-
-# Download model if not exists
-if not os.path.exists(MODEL_PATH) or os.path.getsize(MODEL_PATH) < 100_000_000:
+# 2. ดาวน์โหลดโมเดล (ข้ามถ้ามีไฟล์สมบูรณ์อยู่แล้ว > 1GB)
+if not os.path.exists(MODEL_PATH) or os.path.getsize(MODEL_PATH) < 1_000_000_000:
     print("⏳ Downloading model checkpoint...")
     os.system(f'wget -c --content-disposition -O "{MODEL_PATH}" "{MODEL}"')
 
-# Load Pipeline
-print("⏳ Loading pipeline into memory...")
+# 3. Setup Hardware & Precision
+device = "cuda" if torch.cuda.is_available() else "cpu"
+dtype = torch.float16 if torch.cuda.is_available() else torch.float32
+
+# 4. Load Pipeline
+print("⏳ Loading pipeline...")
 pipe = StableDiffusionXLPipeline.from_single_file(
     MODEL_PATH,
     torch_dtype=dtype,
@@ -43,25 +42,25 @@ pipe = StableDiffusionXLPipeline.from_single_file(
 )
 
 if device == "cuda":
-    # ลด VRAM usage บน Free T4 GPU
+    # จัดการ VRAM บน Colab T4 ป้องกัน Out of Memory
     pipe.enable_model_cpu_offload()
     pipe.enable_vae_tiling()
 else:
     pipe.to(device)
 
 pipe.scheduler = EulerDiscreteScheduler.from_config(pipe.scheduler.config)
-print("\033[1;32mPipeline ready!\033[0m")
+print("\033[1;32mModel ready!\033[0m")
 
 def infer(prompt, negative_prompt, seed, width, height, guidance_scale, num_inference_steps):
     if seed == -1:
         seed = random.randint(0, MAX_SEED)
         
-    generator = torch.Generator(device="cpu").manual_seed(seed) # ใช้ CPU seed generator ป้องกัน GPU state desync
+    generator = torch.Generator(device="cpu").manual_seed(seed)
     
     image = pipe(
         prompt=prompt,
         negative_prompt=negative_prompt,
-        guidance_scale=guidance_scale,
+        guidance_scale=float(guidance_scale),
         num_inference_steps=int(num_inference_steps),
         width=int(width),
         height=int(height),
@@ -78,7 +77,7 @@ def infer(prompt, negative_prompt, seed, width, height, guidance_scale, num_infe
 css = """
 #col-container {
     margin: 0 auto;
-    max-width: 680px;
+    max-width: 600px;
 }
 footer {
     display: none !important;
@@ -94,21 +93,21 @@ examples = [
 with gr.Blocks(css=css, theme='ParityError/Interstellar') as app:
     with gr.Column(elem_id="col-container"):
         gr.Markdown("""
-        # 🎨 Stable Diffusion XL Workspace
-        *Google Colab Session — ข้อมูลและรูปภาพจะถูกลบเมื่อปิด Runtime*
+        # Stable Diffusion XL
+        Google Colab Free Tier Session — รูปที่ Generate จะถูกลบเมื่อปิด Runtime
         """)
 
         with gr.Group():
-            prompt = gr.Textbox(label="Prompt", placeholder="Enter your prompt here...", lines=2)
-            run_button = gr.Button("🚀 Generate Image", variant='primary')
+            prompt = gr.Textbox(label="Prompt", show_label=False, lines=2, placeholder="Enter your prompt here...")
+            run_button = gr.Button("🚀 Generate", variant='primary')
         
-        result = gr.Image(label="Generated Result", interactive=False)
+        result = gr.Image(label="Result", interactive=False)
         
-        with gr.Accordion("⚙️ Advanced Settings", open=False):
+        with gr.Accordion("⚙️ Settings", open=False):
             negative_prompt = gr.Textbox(
                 label="Negative prompt", 
                 lines=2, 
-                value='lowres, text, error, cropped, worst quality, low quality, jpeg artifacts, ugly, duplicate, mutilated, bad anatomy, deformed'
+                value='lowres, text, error, cropped, worst quality, low quality, jpeg artifacts, ugly, duplicate, bad anatomy, deformed'
             )
             
             seed = gr.Slider(label="Seed (-1 for random)", minimum=-1, maximum=MAX_SEED, step=1, value=-1)
@@ -118,8 +117,8 @@ with gr.Blocks(css=css, theme='ParityError/Interstellar') as app:
                 height = gr.Slider(label="Height", minimum=512, maximum=MAX_IMAGE_SIZE, step=64, value=1024)
             
             with gr.Row():
-                guidance_scale = gr.Slider(label="CFG / Guidance scale", minimum=1.0, maximum=15.0, step=0.5, value=7.0)
-                num_inference_steps = gr.Slider(label="Sampling Steps", minimum=10, maximum=50, step=1, value=25)
+                guidance_scale = gr.Slider(label="Guidance scale (CFG)", minimum=1.0, maximum=15.0, step=0.5, value=7.0)
+                num_inference_steps = gr.Slider(label="Steps", minimum=10, maximum=50, step=1, value=25)
 
         gr.Examples(examples=examples, inputs=[prompt])
     
