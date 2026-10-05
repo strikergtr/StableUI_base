@@ -8,33 +8,32 @@ import gradio as gr
 from diffusers import StableDiffusionXLPipeline, EulerDiscreteScheduler
 
 # Constants & Paths
-MODEL_DIR = "/content/StableUI_base"
 SAVE_DIR = "/content/images"
-MODEL_PATH = os.path.join(MODEL_DIR, "model_link.safetensors")
+# หากวางไฟล์ไว้ใน Drive โดยตรง สามารถชี้ไปที่พาธ Drive หรือพาธที่ copy มาไว้ในเครื่องได้
+MODEL_PATH = '/content/StableUI_base/model_link.safetensors'
+
+# รับ path ของโมเดลผ่าน argument ถ้ามีการส่งเข้ามา เช่น: python main.py /path/to/model.safetensors
+if len(sys.argv) > 1:
+    MODEL_PATH = sys.argv[1]
+
 MAX_SEED = np.iinfo(np.int32).max
 MAX_IMAGE_SIZE = 1344
 
-# Default SDXL Checkpoint URL
-MODEL = "https://civitai.com/api/download/models/128078?type=Model&format=SafeTensor&size=pruned&fp=fp16"
-
-if len(sys.argv) > 1:
-    MODEL = sys.argv[1]
-
-# 1. สร้างโฟลเดอร์ที่จำเป็นทั้งหมดล่วงหน้า
+# Setup directories
 os.makedirs(SAVE_DIR, exist_ok=True)
-os.makedirs(MODEL_DIR, exist_ok=True)
-
-# 2. ดาวน์โหลดโมเดล (ข้ามถ้ามีไฟล์สมบูรณ์อยู่แล้ว > 1GB)
-if not os.path.exists(MODEL_PATH) or os.path.getsize(MODEL_PATH) < 1_000_000_000:
-    print("⏳ Downloading model checkpoint...")
-    os.system(f'wget -c --content-disposition -O "{MODEL_PATH}" "{MODEL}"')
-
-# 3. Setup Hardware & Precision
 device = "cuda" if torch.cuda.is_available() else "cpu"
 dtype = torch.float16 if torch.cuda.is_available() else torch.float32
 
-# 4. Load Pipeline
-print("⏳ Loading pipeline...")
+# ตรวจสอบว่าพบไฟล์โมเดลหรือไม่ก่อนโหลด
+if not os.path.exists(MODEL_PATH):
+    raise FileNotFoundError(
+        f"\n[Error] ไม่พบไฟล์โมเดลที่: {MODEL_PATH}\n"
+        "กรุณาตรวจสอบว่าก๊อปปี้ไฟล์จาก Google Drive มาวางถูกตำแหน่ง หรือระบุ Path ถูกต้องแล้วหรือยัง"
+    )
+
+print(f"⏳ กำลังโหลดโมเดลจาก: {MODEL_PATH}")
+
+# Load pipeline
 pipe = StableDiffusionXLPipeline.from_single_file(
     MODEL_PATH,
     torch_dtype=dtype,
@@ -42,7 +41,6 @@ pipe = StableDiffusionXLPipeline.from_single_file(
 )
 
 if device == "cuda":
-    # จัดการ VRAM บน Colab T4 ป้องกัน Out of Memory
     pipe.enable_model_cpu_offload()
     pipe.enable_vae_tiling()
 else:
@@ -94,7 +92,7 @@ with gr.Blocks(css=css, theme='ParityError/Interstellar') as app:
     with gr.Column(elem_id="col-container"):
         gr.Markdown("""
         # Stable Diffusion XL
-        Google Colab Free Tier Session — รูปที่ Generate จะถูกลบเมื่อปิด Runtime
+        รันด้วย Local Model จาก Google Drive
         """)
 
         with gr.Group():
