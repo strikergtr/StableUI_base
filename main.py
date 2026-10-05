@@ -9,7 +9,6 @@ from diffusers import StableDiffusionXLPipeline, EulerDiscreteScheduler
 
 # Constants & Paths
 SAVE_DIR = "/content/images"
-# หากวางไฟล์ไว้ใน Drive โดยตรง สามารถชี้ไปที่พาธ Drive หรือพาธที่ copy มาไว้ในเครื่องได้
 MODEL_PATH = '/content/StableUI_base/model_link.safetensors'
 
 # รับ path ของโมเดลผ่าน argument ถ้ามีการส่งเข้ามา เช่น: python main.py /path/to/model.safetensors
@@ -19,8 +18,10 @@ if len(sys.argv) > 1:
 MAX_SEED = np.iinfo(np.int32).max
 MAX_IMAGE_SIZE = 1344
 
-# Setup directories
+# สร้างโฟลเดอร์สำหรับเซฟภาพ
 os.makedirs(SAVE_DIR, exist_ok=True)
+
+# Device & Precision setup
 device = "cuda" if torch.cuda.is_available() else "cpu"
 dtype = torch.float16 if torch.cuda.is_available() else torch.float32
 
@@ -33,16 +34,18 @@ if not os.path.exists(MODEL_PATH):
 
 print(f"⏳ กำลังโหลดโมเดลจาก: {MODEL_PATH}")
 
-# Load pipeline
+# โหลดโมเดลผ่าน Diffusers Single File Loader
 pipe = StableDiffusionXLPipeline.from_single_file(
     MODEL_PATH,
     torch_dtype=dtype,
     use_safetensors=True
 )
 
+# จัดการ Memory / VRAM
 if device == "cuda":
     pipe.enable_model_cpu_offload()
-    pipe.enable_vae_tiling()
+    if hasattr(pipe, "vae") and hasattr(pipe.vae, "enable_tiling"):
+        pipe.vae.enable_tiling()
 else:
     pipe.to(device)
 
@@ -101,7 +104,7 @@ with gr.Blocks(css=css, theme='ParityError/Interstellar') as app:
         
         result = gr.Image(label="Result", interactive=False)
         
-        with gr.Accordion("⚙️ Settings", open=False):
+        with gr.Accordion("⚙️️ Settings", open=False):
             negative_prompt = gr.Textbox(
                 label="Negative prompt", 
                 lines=2, 
